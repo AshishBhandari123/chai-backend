@@ -16,6 +16,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // return res
 
   const { username, email, fullname, password } = req.body;
+  // console.log(req.body);
 
   if (
     [username, email, fullname, password].some((field) => field?.trim() === "")
@@ -23,27 +24,40 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields is required");
   }
 
-  const existedUser = User.findOne({
+  const existedUser = await User.findOne({
     $or: [{ email }, { username }],
   });
+  // console.log(existedUser);
 
   if (existedUser) {
     throw new ApiError(409, "User with Email or Username already exists");
   }
 
-  const avatarLocalPath = req.file?.avatar[0]?.path;
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+  // console.log(avatarLocalPath);
+  console.log(req.files);
 
-  const coverImageLocalPath = req.file?.coverImage[0]?.path;
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
   }
 
   const avatar = await cloudinaryFileUploader(avatarLocalPath);
+  // console.log(avatar);
+
   const coverImage = await cloudinaryFileUploader(coverImageLocalPath);
 
   if (!avatar) {
-    throw new ApiError(400, "Avatar file is required");
+    throw new ApiError(400, "Avatar file is requiredddddd");
   }
 
   const user = await User.create({
@@ -58,6 +72,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const createdUser = await User.findById(user._id).select(
     "-password -refreshtoken"
   );
+  // console.log(createdUser);
 
   if (!createdUser) {
     throw new ApiError(500, "something went wrong while registering the user");
